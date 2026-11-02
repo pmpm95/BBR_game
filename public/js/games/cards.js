@@ -4,6 +4,7 @@ import { symbolSvg } from './symbols.js';
 /**
  * 카드 짝맞추기
  * deck 은 서버가 매 판 랜덤으로 섞어서 내려줌 → 매번 배치가 달라짐
+ * mount 시점엔 뒷면만 보이고, start() (3·2·1 이후) 에 미리보기 → 게임 시작
  */
 export function mount(stage, { attempt, onFinish }) {
   const deck = attempt.deck;
@@ -11,14 +12,14 @@ export function mount(stage, { attempt, onFinish }) {
     <div class="cards-game">
       <div class="game-hud">
         <div class="hud-item"><span class="hud-label">시간</span><span class="hud-value" data-time>0.00</span></div>
-        <div class="hud-msg" data-msg>잘 기억하세요!</div>
+        <div class="hud-msg" data-msg>곧 카드가 공개돼요!</div>
         <div class="hud-item"><span class="hud-label">찾은 짝</span><span class="hud-value" data-pairs>0 / ${CARDS.pairs}</span></div>
       </div>
       <div class="card-grid preview" data-grid>
         ${deck
           .map(
             (sym, i) => `
-          <button class="card is-open" data-i="${i}" tabindex="-1" aria-label="카드 ${i + 1}">
+          <button class="card" data-i="${i}" tabindex="-1" aria-label="카드 ${i + 1}">
             <span class="card-inner">
               <span class="card-face card-back"></span>
               <span class="card-face card-front">${symbolSvg(sym)}</span>
@@ -45,28 +46,31 @@ export function mount(stage, { attempt, onFinish }) {
   let done = false;
   const timers = [];
 
-  // 미리보기 카운트다운
-  const previewEnd = performance.now() + CARDS.previewMs;
-  const countdown = () => {
-    const left = Math.ceil((previewEnd - performance.now()) / 1000);
-    if (left > 0) {
-      msgEl.textContent = `잘 기억하세요! ${left}`;
-      raf = requestAnimationFrame(countdown);
-    }
-  };
-  countdown();
+  function start() {
+    // 미리보기: 전체 공개 + 카운트다운
+    cards.forEach((c) => c.classList.add('is-open'));
+    const previewEnd = performance.now() + CARDS.previewMs;
+    const countdown = () => {
+      const left = Math.ceil((previewEnd - performance.now()) / 1000);
+      if (left > 0 && !done) {
+        msgEl.textContent = `잘 기억하세요! ${left}`;
+        raf = requestAnimationFrame(countdown);
+      }
+    };
+    countdown();
 
-  timers.push(
-    setTimeout(() => {
-      cancelAnimationFrame(raf);
-      cards.forEach((c) => c.classList.remove('is-open'));
-      grid.classList.remove('preview');
-      msgEl.textContent = '같은 그림을 찾으세요!';
-      t0 = performance.now();
-      locked = false;
-      tick();
-    }, CARDS.previewMs),
-  );
+    timers.push(
+      setTimeout(() => {
+        cancelAnimationFrame(raf);
+        cards.forEach((c) => c.classList.remove('is-open'));
+        grid.classList.remove('preview');
+        msgEl.textContent = '같은 그림을 찾으세요!';
+        t0 = performance.now();
+        locked = false;
+        tick();
+      }, CARDS.previewMs),
+    );
+  }
 
   function tick() {
     timeEl.textContent = ((performance.now() - t0) / 1000).toFixed(2);
@@ -118,6 +122,7 @@ export function mount(stage, { attempt, onFinish }) {
   grid.addEventListener('pointerdown', onPointer);
 
   return {
+    start,
     destroy() {
       done = true;
       cancelAnimationFrame(raf);

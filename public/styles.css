@@ -168,7 +168,7 @@ button { font: inherit; }
 }
 .overlay-head { display: flex; align-items: center; justify-content: space-between; padding: 14px 18px; border-bottom: 1px solid var(--border); background: var(--surface); }
 .overlay-head h3 { margin: 0; font-size: 18px; }
-.stage { flex: 1; min-height: 0; display: flex; flex-direction: column; padding: 16px; overflow: auto; }
+.stage { position: relative; flex: 1; min-height: 0; display: flex; flex-direction: column; padding: 16px; overflow: auto; }
 
 .intro, .result { margin: auto; max-width: 560px; width: 100%; text-align: center; display: flex; flex-direction: column; gap: 14px; align-items: center; }
 .rules { text-align: left; background: var(--surface); border-radius: 16px; padding: 18px 18px 18px 38px; margin: 0; line-height: 1.7; box-shadow: var(--shadow); width: 100%; }
@@ -214,9 +214,14 @@ button { font: inherit; }
 .card-face { position: absolute; inset: 0; border-radius: 12%; backface-visibility: hidden; -webkit-backface-visibility: hidden; display: flex; align-items: center; justify-content: center; }
 .card-back {
   background:
-    repeating-linear-gradient(135deg, transparent 0 9px, rgba(255,255,255,.12) 9px 13px),
+    repeating-linear-gradient(135deg, transparent 0 9px, rgba(255,255,255,.1) 9px 13px),
     linear-gradient(135deg, var(--choco-2), var(--choco));
   box-shadow: inset 0 0 0 3px rgba(255,255,255,.15);
+}
+.card-back::after {
+  content: ''; width: 34%; height: 34%;
+  background: center / contain no-repeat url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath d='M50 88 C18 66 6 46 12 29 C18 12 42 10 50 30 C58 10 82 12 88 29 C94 46 82 66 50 88Z' fill='%23ff8fb1'/%3E%3C/svg%3E");
+  opacity: .85;
 }
 .card:hover:not(.is-open) .card-back { filter: brightness(1.15); }
 .card-front { background: #fff; transform: rotateY(180deg); box-shadow: inset 0 0 0 2px var(--border); }
@@ -269,3 +274,50 @@ button { font: inherit; }
   .rank-table small { display: none; }
   .rank-table .total { font-size: 14px; }
 }
+
+/* ── 게임 설명 팝업 ── */
+.modal-backdrop[hidden] { display: none; }
+.modal-backdrop {
+  position: fixed; inset: 0; z-index: 60; background: rgba(43, 26, 16, 0.5); backdrop-filter: blur(3px);
+  display: flex; align-items: center; justify-content: center; padding: 16px; animation: fade .18s ease;
+}
+.modal {
+  background: var(--surface); border-radius: 26px; width: min(480px, 100%); max-height: 100%; overflow: auto;
+  padding: 0 24px 22px; box-shadow: 0 24px 60px rgba(0,0,0,.25); text-align: center; animation: rise .22s ease;
+}
+.modal-hero {
+  margin: 0 -24px 6px; height: 110px; display: flex; align-items: center; justify-content: center;
+  background:
+    repeating-linear-gradient(115deg, transparent 0 26px, rgba(255,255,255,.25) 26px 34px),
+    linear-gradient(135deg, #ffd3e2, #ffe9d6);
+}
+.modal-stopwatch .modal-hero { background: repeating-linear-gradient(115deg, transparent 0 26px, rgba(255,255,255,.25) 26px 34px), linear-gradient(135deg, #ffe7b8, #ffd3e2); }
+.modal-pepero .modal-hero { background: repeating-linear-gradient(115deg, transparent 0 26px, rgba(255,255,255,.25) 26px 34px), linear-gradient(135deg, #e9c9a8, #ffd3e2); }
+.modal-hero span { font-size: 54px; background: #fff; width: 84px; height: 84px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: var(--shadow); }
+.modal h3 { margin: 10px 0 2px; font-size: 24px; }
+.modal-sub { margin: 0 0 12px; color: var(--pink); font-weight: 800; font-size: 13px; letter-spacing: .08em; }
+.steps { list-style: none; counter-reset: step; text-align: left; margin: 0 0 14px; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.steps li { counter-increment: step; display: flex; gap: 12px; align-items: flex-start; line-height: 1.5; font-size: 15px; }
+.steps li::before {
+  content: counter(step); flex: none; width: 26px; height: 26px; border-radius: 50%; background: var(--choco); color: #fff;
+  font-weight: 800; font-size: 13px; display: flex; align-items: center; justify-content: center; margin-top: 1px;
+}
+.modal-info { background: var(--surface-2); border-radius: 14px; padding: 10px 14px; display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
+.modal-info div { display: flex; justify-content: space-between; gap: 12px; font-size: 14px; text-align: right; }
+.modal-info span { color: var(--muted); flex: none; }
+.modal .warn { margin-bottom: 16px; font-size: 13px; }
+.modal .intro-actions .btn { flex: 1; }
+@keyframes fade { from { opacity: 0; } }
+@keyframes rise { from { opacity: 0; transform: translateY(16px) scale(.98); } }
+
+/* ── 3·2·1 카운트다운 ── */
+.countdown {
+  position: absolute; inset: 0; z-index: 5; display: flex; align-items: center; justify-content: center;
+  background: rgba(255, 247, 240, 0.55); backdrop-filter: blur(1.5px); pointer-events: all;
+}
+.cd-num {
+  font-size: clamp(90px, 22vw, 180px); font-weight: 900; color: var(--choco);
+  text-shadow: 0 6px 0 #fff, 0 10px 30px rgba(90,50,26,.25); animation: cd .8s ease-out both;
+}
+.cd-num.go { color: var(--pink); font-size: clamp(56px, 12vw, 110px); }
+@keyframes cd { 0% { transform: scale(1.8); opacity: 0; } 30% { transform: scale(1); opacity: 1; } 80% { opacity: 1; } 100% { transform: scale(.85); opacity: 0; } }

@@ -7,12 +7,12 @@ import * as pepero from './games/pepero.js';
 const MODULES = { cards, stopwatch, pepero };
 const RULES = {
   cards: [
-    '36장(18쌍) 카드가 <b>4초 동안</b> 공개된 뒤 모두 뒤집혀요.',
+    '빼빼로데이 그림 카드 36장(18쌍)이 <b>4초 동안</b> 공개된 뒤 모두 뒤집혀요.',
     '두 장씩 뒤집어 같은 그림이면 그대로, 다르면 다시 뒤집혀요.',
     '모든 짝을 찾을 때까지 걸린 <b>시간</b>이 기록돼요. 판은 매번 랜덤!',
   ],
   stopwatch: [
-    '시작하면 시간이 흐르다가 <b>3초 뒤 숫자가 가려져요.</b>',
+    '3·2·1 후 시간이 흐르다가 <b>3초 뒤 숫자가 가려져요.</b>',
     '감으로 <b>11.11초</b>라고 생각될 때 정지! (버튼 또는 스페이스바)',
     '11.11초와의 <b>오차가 작을수록</b> 높은 점수.',
   ],
@@ -21,6 +21,11 @@ const RULES = {
     '<b>스페이스바(또는 버튼)를 누르고 있는 동안</b> 빼빼로가 점점 빠르게 길어져요.',
     '떼는 순간 멈춰요. 11.11km에 <b>가까울수록</b> 높은 점수!',
   ],
+};
+const SCORING = {
+  cards: '20초 이내 완료 시 1000점, 이후 1초마다 −8점',
+  stopwatch: '1000점에서 오차 0.001초마다 −1점',
+  pepero: '1000점에서 오차 1m마다 −1점 (20km 도달 시 0점)',
 };
 const PENDING_KEY = 'pp_pending';
 const TAB_KEY = 'pp_tab';
@@ -257,40 +262,96 @@ $('[data-overlay-close]').onclick = () => {
   closeOverlay();
 };
 
+// ── 게임 설명 팝업 ──
+const modal = $('[data-modal]');
+function closeModal() {
+  modal.hidden = true;
+  modal.querySelector('[data-modal-body]').innerHTML = '';
+  if (!state.game) document.body.classList.remove('no-scroll');
+}
+modal.addEventListener('pointerdown', (e) => {
+  if (e.target === modal && !modal.querySelector('[data-start]:disabled')) closeModal();
+});
+window.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && !modal.hidden) closeModal();
+});
+
 function openGame(id) {
   if (!state.me) {
     $('#code')?.focus();
     return toast('먼저 개인 코드 4자리를 입력해주세요.');
   }
-  const left = state.me.games[id].left;
-  showOverlay(`${GAME_INFO[id].emoji} ${GAME_INFO[id].name}`);
-  state.game = { id, handle: null, finished: false };
-  stage.innerHTML = `
-    <div class="intro">
-      <ul class="rules">${RULES[id].map((r) => `<li>${r}</li>`).join('')}</ul>
-      <p class="warn">시작하면 기회 1회가 차감돼요. (남은 기회 <b>${left}</b>/${MAX_ATTEMPTS})<br/>최고 기록만 랭킹에 반영됩니다.</p>
-      <div class="intro-actions">
-        <button class="btn btn-ghost" data-cancel>취소</button>
-        <button class="btn btn-primary btn-lg" data-start>시작하기</button>
-      </div>
+  const info = GAME_INFO[id];
+  const mine = state.me.games[id];
+  const body = modal.querySelector('[data-modal-body]');
+  body.className = `modal modal-${id}`;
+  body.innerHTML = `
+    <div class="modal-hero"><span>${info.emoji}</span></div>
+    <h3 id="modal-title">${info.name}</h3>
+    <p class="modal-sub">게임 방법</p>
+    <ol class="steps">${RULES[id].map((r) => `<li><span>${r}</span></li>`).join('')}</ol>
+    <div class="modal-info">
+      <div><span>점수</span><b>${SCORING[id]}</b></div>
+      <div><span>남은 기회</span><b>${mine.left} / ${MAX_ATTEMPTS}</b></div>
+      ${mine.best ? `<div><span>내 최고</span><b>${esc(mine.best.display)} · ${mine.best.score}점</b></div>` : ''}
+    </div>
+    <p class="warn">시작 버튼을 누르면 기회 1회가 차감되고 <b>3·2·1</b> 후 게임이 시작돼요.<br/>최고 기록만 랭킹에 반영됩니다.</p>
+    <div class="intro-actions">
+      <button class="btn btn-ghost btn-lg" data-cancel>닫기</button>
+      <button class="btn btn-primary btn-lg" data-start>시작하기 ▶</button>
     </div>`;
-  stage.querySelector('[data-cancel]').onclick = closeOverlay;
-  stage.querySelector('[data-start]').onclick = async (e) => {
-    e.target.disabled = true;
+  modal.hidden = false;
+  document.body.classList.add('no-scroll');
+  body.querySelector('[data-cancel]').onclick = closeModal;
+  body.querySelector('[data-start]').onclick = async (e) => {
+    e.currentTarget.disabled = true;
     try {
       const { attempt, me } = await api('POST', '/api/attempts', { game: id });
       state.me = me;
-      if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
-      state.game.handle = MODULES[id].mount(stage, {
-        attempt,
-        onFinish: (payload) => submitResult(attempt, payload),
-      });
+      closeModal();
+      startGame(attempt);
     } catch (err) {
       toast(err.message);
-      closeOverlay();
+      closeModal();
       refresh();
     }
   };
+}
+
+async function startGame(attempt) {
+  const id = attempt.game;
+  if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
+  showOverlay(`${GAME_INFO[id].emoji} ${GAME_INFO[id].name}`);
+  const game = { id, handle: null, finished: false };
+  state.game = game;
+  game.handle = MODULES[id].mount(stage, {
+    attempt,
+    onFinish: (payload) => submitResult(attempt, payload),
+  });
+  const ok = await countdown(stage);
+  if (ok && state.game === game && game.handle) game.handle.start();
+}
+
+// 3 · 2 · 1 · START!
+function countdown(container) {
+  return new Promise((resolve) => {
+    const el = document.createElement('div');
+    el.className = 'countdown';
+    container.appendChild(el);
+    const steps = ['3', '2', '1', 'START!'];
+    let i = 0;
+    const next = () => {
+      if (!el.isConnected) return resolve(false);
+      if (i === steps.length) {
+        el.remove();
+        return resolve(true);
+      }
+      el.innerHTML = `<span class="cd-num ${i === 3 ? 'go' : ''}">${steps[i]}</span>`;
+      i += 1;
+      setTimeout(next, i === steps.length ? 550 : 800);
+    };
+    next();
+  });
 }
 
 async function submitResult(attempt, payload) {
@@ -347,7 +408,10 @@ function showResult(game, result) {
           ${mine.left > 0 && !state.board.frozen ? '<button class="btn btn-primary" data-again>한 번 더!</button>' : ''}
         </div>
       </div>`;
-    stage.querySelector('[data-again]')?.addEventListener('click', () => openGame(game));
+    stage.querySelector('[data-again]')?.addEventListener('click', () => {
+      closeOverlay();
+      openGame(game);
+    });
   }
   stage.querySelector('[data-close]')?.addEventListener('click', closeOverlay);
 }

@@ -1,17 +1,20 @@
 import { STOPWATCH } from '../shared/rules.js';
 
-/** 11초 11 맞추기: 처음 3초만 시간이 보이고, 그다음은 감으로 멈추기 */
+/**
+ * 11초 11 맞추기
+ * 3·2·1 이 끝나면(start) 시간이 흐르기 시작 → 3초 뒤 가려짐 → 감으로 정지
+ */
 export function mount(stage, { onFinish }) {
   stage.innerHTML = `
     <div class="sw-game">
-      <p class="sw-guide" data-guide>시작하면 시간이 흐르다가 <b>3초 뒤 가려져요.</b><br/>정확히 <b>11.11초</b>에 멈추세요!</p>
+      <p class="sw-guide" data-guide>시간이 흐르다가 <b>3초 뒤 가려져요.</b><br/>정확히 <b>11.11초</b>에 멈추세요!</p>
       <div class="sw-display" data-display>
         <span class="sw-num" data-num>0.00</span><span class="sw-unit">초</span>
         <div class="sw-curtain" data-curtain><span>?? . ??</span></div>
       </div>
       <div class="sw-target">목표 <b>11.11</b>초</div>
-      <button class="btn btn-xl btn-primary" data-btn tabindex="-1">시작</button>
-      <p class="hint">스페이스바로도 할 수 있어요</p>
+      <button class="btn btn-xl btn-stop" data-btn tabindex="-1" disabled>정지!</button>
+      <p class="hint">버튼 또는 스페이스바로 정지</p>
     </div>`;
 
   const num = stage.querySelector('[data-num]');
@@ -23,11 +26,11 @@ export function mount(stage, { onFinish }) {
   let raf = 0;
   const timers = [];
 
-  function start(ts) {
+  function start() {
+    if (phase !== 'ready') return;
     phase = 'running';
-    t0 = ts;
-    btn.textContent = '정지!';
-    btn.classList.replace('btn-primary', 'btn-stop');
+    t0 = performance.now();
+    btn.disabled = false;
     guide.innerHTML = '두근두근… 감으로 <b>11.11초</b>에 정지!';
     const loop = () => {
       const e = performance.now() - t0;
@@ -58,24 +61,20 @@ export function mount(stage, { onFinish }) {
     timers.push(setTimeout(() => onFinish({ stoppedMs }), 1800));
   }
 
-  function act(ts) {
-    if (phase === 'ready') start(ts);
-    else if (phase === 'running') stop(ts);
-  }
-
   const onKey = (e) => {
     if (e.code !== 'Space') return;
     e.preventDefault();
-    if (!e.repeat) act(e.timeStamp);
+    if (!e.repeat) stop(e.timeStamp);
   };
   const onBtn = (e) => {
     e.preventDefault();
-    act(e.timeStamp);
+    stop(e.timeStamp);
   };
   window.addEventListener('keydown', onKey);
   btn.addEventListener('pointerdown', onBtn);
 
   return {
+    start,
     destroy() {
       phase = 'destroyed';
       cancelAnimationFrame(raf);
