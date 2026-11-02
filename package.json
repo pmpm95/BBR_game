@@ -1,0 +1,15 @@
+{
+  "name": "pepero-day-challenge",
+  "version": "1.0.0",
+  "private": true,
+  "description": "빼빼로데이 팀 게임 이벤트 - 카드 짝맞추기 / 11.11초 / 11.11km 빼빼로",
+  "type": "module",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "start": "node server/index.js",
+    "gen-codes": "node scripts/gen-codes.js",
+    "test": "node --test test/*.test.js"
+  }
+}
