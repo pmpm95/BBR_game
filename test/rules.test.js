@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { evaluateResult, peperoLength, peperoHoldMsFor, replayCards, scoreOf, PEPERO } from '../public/js/shared/rules.js';
-import { buildLeaderboard } from '../server/leaderboard.js';
+import { buildLeaderboard } from '../public/js/shared/leaderboard.js';
 
 const deck = Array.from({ length: 36 }, (_, i) => Math.floor(i / 2)); // [0,0,1,1,...]
 const perfectFlips = deck.map((_, i) => [i, 1000 + i * 500]);

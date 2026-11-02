@@ -218,11 +218,7 @@ button { font: inherit; }
     linear-gradient(135deg, var(--choco-2), var(--choco));
   box-shadow: inset 0 0 0 3px rgba(255,255,255,.15);
 }
-.card-back::after {
-  content: ''; width: 34%; height: 34%;
-  background: center / contain no-repeat url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath d='M50 88 C18 66 6 46 12 29 C18 12 42 10 50 30 C58 10 82 12 88 29 C94 46 82 66 50 88Z' fill='%23ff8fb1'/%3E%3C/svg%3E");
-  opacity: .85;
-}
+.card-back svg { width: 34%; height: 34%; opacity: .85; }
 .card:hover:not(.is-open) .card-back { filter: brightness(1.15); }
 .card-front { background: #fff; transform: rotateY(180deg); box-shadow: inset 0 0 0 2px var(--border); }
 .card-front svg { width: 72%; height: 72%; }

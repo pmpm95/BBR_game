@@ -15,6 +15,9 @@
 - 참가자는 각자 받은 **4자리 개인 코드**로 본인 인증을 합니다.
 - 점수 공식과 게임 설정은 모두 `public/js/shared/rules.js` 한 파일에 모여 있습니다. 브라우저와 서버가 같은 파일을 씁니다.
 
+> 💡 **사내 서버 없이 Microsoft Copilot Managed Runtime(managedapps.cloud.microsoft)에 올리려면**
+> [`managed-app/README.md`](managed-app/README.md) 를 보세요. 회사 계정 자동 로그인 + 내장 저장소를 쓰는 버전입니다.
+
 ## 구조
 
 ```

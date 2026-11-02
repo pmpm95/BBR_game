@@ -21,7 +21,7 @@ export function mount(stage, { attempt, onFinish }) {
             (sym, i) => `
           <button class="card" data-i="${i}" tabindex="-1" aria-label="카드 ${i + 1}">
             <span class="card-inner">
-              <span class="card-face card-back"></span>
+              <span class="card-face card-back"><svg viewBox="0 0 100 100" aria-hidden="true"><path d="M50 88 C18 66 6 46 12 29 C18 12 42 10 50 30 C58 10 82 12 88 29 C94 46 82 66 50 88Z" fill="#ff8fb1"/></svg></span>
               <span class="card-face card-front">${symbolSvg(sym)}</span>
             </span>
           </button>`,

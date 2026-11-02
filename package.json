@@ -10,6 +10,7 @@
   "scripts": {
     "start": "node server/index.js",
     "gen-codes": "node scripts/gen-codes.js",
-    "test": "node --test test/*.test.js"
+    "test": "node --test test/*.test.js",
+    "sync:managed": "node scripts/sync-managed.js"
   }
 }

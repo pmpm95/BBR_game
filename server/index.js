@@ -5,7 +5,7 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { Store } from './store.js';
-import { buildLeaderboard, summarize } from './leaderboard.js';
+import { buildLeaderboard, summarize } from '../public/js/shared/leaderboard.js';
 import {
   CARDS,
   GAME_IDS,

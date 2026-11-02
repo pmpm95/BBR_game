@@ -1,4 +1,5 @@
-import { GAME_IDS, MAX_ATTEMPTS } from '../public/js/shared/rules.js';
+// 랭킹 계산 (사내 서버 버전과 Managed Runtime 버전이 함께 사용)
+import { GAME_IDS, MAX_ATTEMPTS } from './rules.js';
 
 const better = (a, b) =>
   a.metric !== b.metric ? a.metric < b.metric : a.finishedAt < b.finishedAt;
@@ -34,19 +35,21 @@ export function buildLeaderboard(players, attempts) {
       .sort((x, y) => (better(x.games[g].best, y.games[g].best) ? -1 : 1))
       .map((s, i) => ({
         rank: i + 1,
+        id: s.id,
         name: s.name,
         used: s.games[g].used,
         ...publicBest(s.games[g].best),
       }));
     const waiting = summary
       .filter((s) => !s.games[g].best)
-      .map((s) => ({ rank: null, name: s.name, used: s.games[g].used }));
+      .map((s) => ({ rank: null, id: s.id, name: s.name, used: s.games[g].used }));
     games[g] = [...rows, ...waiting];
   }
 
   const overallRows = summary.map((s) => {
     const bests = GAME_IDS.map((g) => s.games[g].best).filter(Boolean);
     return {
+      id: s.id,
       name: s.name,
       total: bests.reduce((sum, b) => sum + b.score, 0),
       played: bests.length > 0,
